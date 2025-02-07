@@ -1,0 +1,9 @@
+flask
+django
+biopython
+matplotlib
+plotly
+seaborn
+pandas
+numpy
+scipy
