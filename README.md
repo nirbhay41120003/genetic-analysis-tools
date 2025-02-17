@@ -112,11 +112,3 @@ Then, run the variant calling tool.
 
 ---
 
-## Contributing
-Feel free to submit **pull requests** or open an **issue** for improvements.
-
----
-
-## License
-This project is **open-source** under the MIT License.
-
