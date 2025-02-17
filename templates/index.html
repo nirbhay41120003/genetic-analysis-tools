@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Genetic Analysis Tools</title>
+</head>
+<body>
+    <h2>Sequence Alignment</h2>
+    <form action="/align" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <button type="submit">Align Sequences</button>
+    </form>
+
+    <h2>Variant Calling</h2>
+    <form action="/variants" method="post" enctype="multipart/form-data">
+        <input type="file" name="bam_file">
+        <button type="submit">Run Variant Calling</button>
+    </form>
+
+    <h2>Gene Expression Analysis</h2>
+    <form action="/gene_expression" method="post">
+        <button type="submit">Generate Heatmap</button>
+    </form>
+</body>
+</html>

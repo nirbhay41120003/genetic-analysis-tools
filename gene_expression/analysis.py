@@ -1,11 +1,13 @@
-import numpy as np
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-def tpm(counts):
-    rpk = counts / np.sum(counts, axis=0)
-    return (rpk / np.sum(rpk, axis=0)) * 1e6
+def plot_expression(data_file):
+    df = pd.read_csv(data_file)
+    plt.figure(figsize=(10, 5))
+    sns.heatmap(df.iloc[:, 1:], cmap="coolwarm")
+    plt.title("Gene Expression Heatmap")
+    plt.show()
 
 if __name__ == "__main__":
-    df = pd.read_csv("gene_counts.csv")
-    df_tpm = tpm(df.iloc[:, 1:])
-    df_tpm.to_csv("gene_counts_tpm.csv", index=False)
+    plot_expression("gene_expression/gene_counts_tpm.csv")
