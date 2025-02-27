@@ -1,24 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Genetic Analysis Tools</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>Sequence Alignment</h2>
-    <form action="/align" method="post" enctype="multipart/form-data">
-        <input type="file" name="file">
-        <button type="submit">Align Sequences</button>
-    </form>
+    <div class="container">
+        <header class="header">
+            <h1>Genetic Analysis Tools</h1>
+            <p>Powerful tools for sequence alignment, variant calling, and gene expression analysis</p>
+        </header>
 
-    <h2>Variant Calling</h2>
-    <form action="/variants" method="post" enctype="multipart/form-data">
-        <input type="file" name="bam_file">
-        <button type="submit">Run Variant Calling</button>
-    </form>
+        <div class="tabs">
+            <div class="tab active" data-target="sequence-alignment">Sequence Alignment</div>
+            <div class="tab" data-target="variant-calling">Variant Calling</div>
+            <div class="tab" data-target="gene-expression">Gene Expression</div>
+        </div>
 
-    <h2>Gene Expression Analysis</h2>
-    <form action="/gene_expression" method="post">
-        <button type="submit">Generate Heatmap</button>
-    </form>
+        <div class="grid">
+            <!-- Sequence Alignment Card -->
+            <div class="card" id="sequence-alignment">
+                <h2>Sequence Alignment</h2>
+                <p>Upload FASTA files for pairwise sequence alignment using Needleman-Wunsch or Smith-Waterman algorithms.</p>
+                <form action="/align" method="post" enctype="multipart/form-data" class="form">
+                    <div class="form-group">
+                        <div class="file-upload">
+                            <label for="fasta-file" class="file-upload-label">
+                                <span>Drop FASTA file here or click to upload</span>
+                                <input type="file" id="fasta-file" name="file" class="file-upload-input" accept=".fasta,.fa">
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Align Sequences</button>
+                </form>
+            </div>
+
+            <!-- Variant Calling Card -->
+            <div class="card" id="variant-calling" style="display: none;">
+                <h2>Variant Calling</h2>
+                <p>Upload BAM files to identify genetic variants using our variant calling pipeline.</p>
+                <form action="/variants" method="post" enctype="multipart/form-data" class="form">
+                    <div class="form-group">
+                        <div class="file-upload">
+                            <label for="bam-file" class="file-upload-label">
+                                <span>Drop BAM file here or click to upload</span>
+                                <input type="file" id="bam-file" name="bam_file" class="file-upload-input" accept=".bam">
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Call Variants</button>
+                </form>
+            </div>
+
+            <!-- Gene Expression Card -->
+            <div class="card" id="gene-expression" style="display: none;">
+                <h2>Gene Expression Analysis</h2>
+                <p>Upload CSV files containing gene expression data to generate interactive heatmaps.</p>
+                <form action="/gene_expression" method="post" enctype="multipart/form-data" class="form">
+                    <div class="form-group">
+                        <div class="file-upload">
+                            <label for="csv-file" class="file-upload-label">
+                                <span>Drop CSV file here or click to upload</span>
+                                <input type="file" id="csv-file" name="file" class="file-upload-input" accept=".csv">
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Generate Heatmap</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="results" class="result-container" style="display: none;">
+            <div class="result-header">
+                <h3>Results</h3>
+                <button class="btn btn-secondary" onclick="clearResults()">Clear</button>
+            </div>
+            <div id="result-content" class="result-content"></div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="spinner" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.card').forEach(card => card.style.display = 'none');
+                document.getElementById(tab.dataset.target).style.display = 'block';
+                clearResults();
+            });
+        });
+
+        // File upload handling
+        document.querySelectorAll('.file-upload-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const fileName = e.target.files[0]?.name || 'No file selected';
+                e.target.parentElement.querySelector('span').textContent = fileName;
+            });
+        });
+
+        // Form submission handling
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const loading = document.getElementById('loading');
+                const results = document.getElementById('results');
+                const resultContent = document.getElementById('result-content');
+
+                try {
+                    loading.style.display = 'block';
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+
+                    results.style.display = 'block';
+                    if (data.error) {
+                        resultContent.innerHTML = `<div class="alert alert-error">${data.error}</div>`;
+                    } else {
+                        if (data.plot) {
+                            resultContent.innerHTML = data.plot;
+                        } else {
+                            resultContent.innerHTML = `<div class="alert alert-success">Success!</div><pre>${data.alignment || data.variants}</pre>`;
+                        }
+                    }
+                } catch (error) {
+                    results.style.display = 'block';
+                    resultContent.innerHTML = `<div class="alert alert-error">An error occurred: ${error.message}</div>`;
+                } finally {
+                    loading.style.display = 'none';
+                    form.reset();
+                    form.querySelector('.file-upload-label span').textContent = 'Drop file here or click to upload';
+                }
+            });
+        });
+
+        // Clear results
+        function clearResults() {
+            const results = document.getElementById('results');
+            const resultContent = document.getElementById('result-content');
+            results.style.display = 'none';
+            resultContent.innerHTML = '';
+        }
+
+        // Drag and drop functionality
+        document.querySelectorAll('.file-upload-label').forEach(label => {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                label.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                label.addEventListener(eventName, () => {
+                    label.classList.add('highlight');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                label.addEventListener(eventName, () => {
+                    label.classList.remove('highlight');
+                }, false);
+            });
+
+            label.addEventListener('drop', (e) => {
+                const input = label.querySelector('input');
+                const dt = e.dataTransfer;
+                input.files = dt.files;
+                label.querySelector('span').textContent = dt.files[0].name;
+            }, false);
+        });
+    </script>
 </body>
 </html>
